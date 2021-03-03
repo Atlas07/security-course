@@ -2,21 +2,18 @@
 const EventEmitter = require("events");
 const { AES, enc } = require("crypto-js");
 
-const { generateKeyPair } = require("./utils");
+const { getRandomInt } = require("./utils");
 const {
-  getPublicKeyFromPrivateKey,
-  getSharedSecret,
+  getPublicKeyFromPrivateKeyPG,
+  getSharedSecretP,
 } = require("./diffieHellman");
 
 const PublicKeysStorage = {};
 const events = new EventEmitter();
 
 const generatePublicPrivateKeys = function () {
-  const keys = generateKeyPair();
-  this.privateKey = keys.privateKey;
-  this.publicKey = keys.publicKey;
-  this.key = keys.key;
-  this.ecdh = keys.ecdh;
+  this.privateKey = getRandomInt();
+  this.publicKey = getPublicKeyFromPrivateKeyPG(this.privateKey);
 };
 
 const uploadPublicKey = function (storage) {
@@ -30,15 +27,18 @@ const addClient = function (client) {
   this.clients = [...clientsSet];
 };
 
-const generateSessionKey = function (storage, id) {
-  const key = storage[id];
-  const sessionKey = this.ecdh.computeSecret(key, "hex", "hex");
+const generateSessionKey = function (publicKeys, id) {
+  const key = publicKeys[id];
+  const sessionKey = getSharedSecretP(this.privateKey, key);
 
   this.sessionKeys[id] = sessionKey;
 };
 
 const sendMessage = function (id, message) {
-  const cipheredText = AES.encrypt(message, this.sessionKeys[id]).toString();
+  const cipheredText = AES.encrypt(
+    message,
+    `${this.sessionKeys[id]}`
+  ).toString();
   const hasClient = !!this.clients.find((client) => client === id);
 
   if (hasClient) {
@@ -59,7 +59,7 @@ const recieveMessage = function (from, to, message) {
   if (to === this.id) {
     const decipheredText = AES.decrypt(
       message,
-      this.sessionKeys[from] // TODO: this.sessionKeys[from]
+      `${this.sessionKeys[from]}`
     ).toString(enc.Utf8);
 
     console.log(decipheredText);
@@ -168,4 +168,4 @@ events.on(`${clientC.id}-recieveMessage`, (from, to, message) =>
   clientC.recieveMessage(from, to, message)
 );
 
-// clientC.sendMessage(clientB.id, "Sometimes the same is different");
+clientC.sendMessage(clientB.id, "Sometimes the same is different");
