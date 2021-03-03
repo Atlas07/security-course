@@ -168,4 +168,6 @@ events.on(`${clientC.id}-recieveMessage`, (from, to, message) =>
   clientC.recieveMessage(from, to, message)
 );
 
-clientC.sendMessage(clientB.id, "Sometimes the same is different");
+// clientC.sendMessage(clientB.id, "Sometimes the same is different");
+
+// console.log(clientC);

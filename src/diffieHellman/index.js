@@ -1,9 +1,10 @@
 const R = require("ramda");
-const { AES, enc } = require("crypto-js");
+
+const { getRandomInt } = require("../utils");
 
 // TODO: take from ENV file
-const P = 23;
-const G = 5;
+const P = 1299827;
+const G = 3;
 
 const range = (min, max) => {
   const ret = [];
@@ -23,12 +24,12 @@ const checkPrime = (v) => {
 
 const isArgsValid = (p, g) => {
   if (p <= 0) {
-    // console.log("Given prime number is out of range");
+    console.log("Given prime number is out of range");
     return false;
   }
 
   if (!checkPrime(p) || !checkPrime(g)) {
-    // console.log("Given number is not primer");
+    console.log("Given number is not primer");
     return false;
   }
 
@@ -41,24 +42,29 @@ const getPublicKeyFromPrivateKey = R.curry((p, g, privateKey) => {
   }
 
   if (privateKey <= 1 || p <= privateKey) {
-    // console.log("privateKey is out of range");
+    console.log("privateKey is out of range");
     return null;
   }
-
   return Math.pow(g, privateKey) % p;
 });
+
+const getPublicKeyFromPrivateKeyPG = getPublicKeyFromPrivateKey(P, G);
 
 const getSharedSecret = R.curry(
   (p, privateKey, publicKey) => Math.pow(publicKey, privateKey) % p
 );
 
+const getSharedSecretP = getSharedSecret(P);
+
 module.exports = {
   getPublicKeyFromPrivateKey,
-  getPublicKeyFromPrivateKeyPG: getPublicKeyFromPrivateKey(P, G),
+  getPublicKeyFromPrivateKeyPG,
   getSharedSecret,
-  getSharedSecretP: getSharedSecret(P),
+  getSharedSecretP,
 };
 
+const random = getRandomInt()
+console.log(random, getPublicKeyFromPrivateKeyPG(random));
 
 // * USAGE
 // * Remove
