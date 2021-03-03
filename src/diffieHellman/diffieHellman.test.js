@@ -1,7 +1,7 @@
 const {
   getPublicKeyFromPrivateKey,
   getSharedSecret,
-} = require("./diffieHellman");
+} = require(".");
 
 const privateK1 = 6;
 const publicK1 = 8;

@@ -53,7 +53,9 @@ const getSharedSecret = R.curry(
 );
 
 module.exports = {
+  getPublicKeyFromPrivateKey,
   getPublicKeyFromPrivateKeyPG: getPublicKeyFromPrivateKey(P, G),
+  getSharedSecret,
   getSharedSecretP: getSharedSecret(P),
 };
 
