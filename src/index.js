@@ -1,6 +1,7 @@
 // https://github.com/nathanbuchar/node-cipher/blob/HEAD/docs/using-the-node-js-api.md#options files only
 const EventEmitter = require("events");
 const { AES, enc } = require("crypto-js");
+const nodecipher = require("node-cipher");
 
 const { getRandomInt } = require("./utils");
 const {
@@ -35,8 +36,9 @@ const generateSessionKey = function (publicKeys, id) {
 };
 
 const sendMessage = function (id, message) {
+  console.log({ message });
   const cipheredText = AES.encrypt(
-    message,
+    JSON.stringify(message),
     `${this.sessionKeys[id]}`
   ).toString();
   const hasClient = !!this.clients.find((client) => client === id);
@@ -61,8 +63,14 @@ const recieveMessage = function (from, to, message) {
       message,
       `${this.sessionKeys[from]}`
     ).toString(enc.Utf8);
+    const parsedDecipheredText = JSON.parse(decipheredText);
 
-    console.log({ decipheredText });
+    console.log({ parsedDecipheredText });
+
+    if (parsedDecipheredText.type === "password") {
+      this.symmetricKeys[from] = parsedDecipheredText.text;
+    }
+
     return;
   }
 
@@ -78,14 +86,61 @@ const recieveMessage = function (from, to, message) {
   );
 };
 
+const sendFile = function (id, filename) {
+  const outputFilename = `${this.dir}${filename}.cast5`;
+  nodecipher.encryptSync({
+    input: filename,
+    output: outputFilename,
+    password: this.symmetricPassword,
+  });
+
+  const hasClient = !!this.clients.find((client) => client === id);
+
+  if (hasClient) {
+    events.emit(`${id}-recieveFile`, this.id, id, filename, outputFilename);
+    return;
+  }
+
+  this.clients.forEach((client) =>
+    events.emit(`${client}-recieveFile`, this.id, id, filename, outputFilename)
+  );
+};
+
+const recieveFile = function (from, to, filename, filenamePath) {
+  console.log(`File from ${from} recieved by ${this.id}`);
+  console.log({ from, to });
+
+  if (to == this.id) {
+    const decipheredFile = nodecipher.decryptSync({
+      input: filenamePath,
+      output: `${this.dir}${filename}`,
+      password: this.symmetricKeys[from],
+    });
+
+    console.log({ decipheredFile });
+    return;
+  }
+
+  const hasClient = !!this.clients.find((client) => client === to);
+
+  if (hasClient) {
+    events.emit(`${to}-recieveFile`, from, to, filename, filenamePath);
+    return;
+  }
+
+  this.clients.forEach((client) =>
+    events.emit(`${client}-recieveFile`, from, to, filename, filenamePath)
+  );
+};
+
 const clientA = {
   id: "VerticeA",
   publicKey: null,
   privateKey: null,
-  dir: "./folder/clientA",
-  symmetricKey: "",
-  symmetricKeyPass: "",
+  dir: "./files/clientA/",
+  symmetricPassword: "clientBPass",
   sessionKeys: {},
+  symmetricKeys: {},
   clients: [],
 
   generatePublicPrivateKeys,
@@ -94,18 +149,18 @@ const clientA = {
   generateSessionKey,
   sendMessage,
   recieveMessage,
-
-  sendFile: () => {},
+  sendFile,
+  recieveFile,
 };
 
 const clientB = {
   id: "VerticeB",
   publicKey: null,
   privateKey: null,
-  dir: "./folder/clientB",
-  symmetricKey: "",
-  symmetricKeyPass: "",
+  dir: "./files/clientB/",
   sessionKeys: {},
+  symmetricKeys: {},
+  symmetricPassword: "clientBPass",
   clients: [],
 
   generatePublicPrivateKeys,
@@ -114,16 +169,18 @@ const clientB = {
   generateSessionKey,
   sendMessage,
   recieveMessage,
+  sendFile,
+  recieveFile,
 };
 
 const clientC = {
   id: "VerticeC",
   publicKey: null,
   privateKey: null,
-  dir: "./folder/clientC",
-  symmetricKey: "",
-  symmetricKeyPass: "",
+  dir: "./files/clientC/",
   sessionKeys: {},
+  symmetricKeys: {},
+  symmetricPassword: "clientCPass",
   clients: [],
 
   generatePublicPrivateKeys,
@@ -132,6 +189,8 @@ const clientC = {
   generateSessionKey,
   sendMessage,
   recieveMessage,
+  sendFile,
+  recieveFile,
 };
 
 clientA.generatePublicPrivateKeys();
@@ -164,8 +223,24 @@ events.on(`${clientB.id}-recieveMessage`, (from, to, message) =>
 events.on(`${clientC.id}-recieveMessage`, (from, to, message) =>
   clientC.recieveMessage(from, to, message)
 );
+events.on(`${clientA.id}-recieveFile`, (from, to, filename, filenamePath) =>
+  clientA.recieveFile(from, to, filename, filenamePath)
+);
+events.on(`${clientB.id}-recieveFile`, (from, to, filename, filenamePath) =>
+  clientB.recieveFile(from, to, filename, filenamePath)
+);
+events.on(`${clientC.id}-recieveFile`, (from, to, filename, filenamePath) =>
+  clientC.recieveFile(from, to, filename, filenamePath)
+);
 
-console.log({ PublicKeysStorage });
-console.log('clientC', clientC);
-console.log('clientB', clientB);
-clientC.sendMessage(clientB.id, "Sometimes the same is different");
+// clientC.sendMessage(clientB.id, {
+//   text: "Sometimes the same is different",
+//   type: "message",
+// });
+clientC.sendMessage(clientB.id, {
+  text: clientC.symmetricPassword,
+  type: "password",
+});
+console.log('====================================');
+clientC.sendFile(clientB.id, "README.md");
+
