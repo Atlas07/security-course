@@ -12,7 +12,7 @@ const PublicKeysStorage = {};
 const events = new EventEmitter();
 
 const generatePublicPrivateKeys = function () {
-  this.privateKey = getRandomInt();
+  this.privateKey = getRandomInt(2, 10);
   this.publicKey = getPublicKeyFromPrivateKeyPG(this.privateKey);
 };
 
@@ -62,7 +62,7 @@ const recieveMessage = function (from, to, message) {
       `${this.sessionKeys[from]}`
     ).toString(enc.Utf8);
 
-    console.log(decipheredText);
+    console.log({ decipheredText });
     return;
   }
 
@@ -80,7 +80,6 @@ const recieveMessage = function (from, to, message) {
 
 const clientA = {
   id: "VerticeA",
-  key: null,
   publicKey: null,
   privateKey: null,
   dir: "./folder/clientA",
@@ -101,7 +100,6 @@ const clientA = {
 
 const clientB = {
   id: "VerticeB",
-  key: null,
   publicKey: null,
   privateKey: null,
   dir: "./folder/clientB",
@@ -120,7 +118,6 @@ const clientB = {
 
 const clientC = {
   id: "VerticeC",
-  key: null,
   publicKey: null,
   privateKey: null,
   dir: "./folder/clientC",
@@ -168,6 +165,7 @@ events.on(`${clientC.id}-recieveMessage`, (from, to, message) =>
   clientC.recieveMessage(from, to, message)
 );
 
-// clientC.sendMessage(clientB.id, "Sometimes the same is different");
-
-// console.log(clientC);
+console.log({ PublicKeysStorage });
+console.log('clientC', clientC);
+console.log('clientB', clientB);
+clientC.sendMessage(clientB.id, "Sometimes the same is different");

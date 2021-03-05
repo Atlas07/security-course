@@ -1,10 +1,11 @@
 const R = require("ramda");
+const { AES, enc } = require("crypto-js");
 
 const { getRandomInt } = require("../utils");
 
 // TODO: take from ENV file
-const P = 1299827;
-const G = 3;
+const P = 23;
+const G = 5;
 
 const range = (min, max) => {
   const ret = [];
@@ -63,33 +64,31 @@ module.exports = {
   getSharedSecretP,
 };
 
-const random = getRandomInt()
-console.log(random, getPublicKeyFromPrivateKeyPG(random));
-
 // * USAGE
 // * Remove
-// const alicePrivateKey = 61;
-// const alicePublicKey = 84;
-// const bobPrivateKey = 154;
-// const bobPublicKey = 1944444;
+// const alicePrivateKey = getRandomInt(2, 10);
+// const alicePublicKey = getPublicKeyFromPrivateKeyPG(alicePrivateKey);
+// const bobPrivateKey = getRandomInt(2, 10);
+// const bobPublicKey = getPublicKeyFromPrivateKeyPG(bobPrivateKey);
 
-// console.log(getPublicKeyFromPrivateKey(p, g, alicePrivateKey));
-// console.log(getPublicKeyFromPrivateKey(p, g, bobPrivateKey));
-
-// console.log(getSharedSecret(p, alicePrivateKey, bobPublicKey));
-// console.log(getSharedSecret(p, bobPrivateKey, alicePublicKey));
+// console.log({ alicePrivateKey, alicePublicKey });
+// console.log({ bobPrivateKey, bobPublicKey });
+// console.log({
+//   sharedAlice: getSharedSecret(P, alicePrivateKey, bobPublicKey),
+//   sharedBob: getSharedSecret(P, bobPrivateKey, alicePublicKey),
+// });
 
 // const cipherMessage = (message) => {
-//   const sharedKey = getSharedSecret(23, alicePrivateKey, bobPublicKey);
+//   const sharedKey = getSharedSecret(P, alicePrivateKey, bobPublicKey);
 //   return AES.encrypt(message, `${sharedKey}`).toString();
 // };
 
 // const decipherMessage = (message) => {
-//   const sharedKey = getSharedSecret(23, bobPrivateKey, alicePublicKey);
+//   const sharedKey = getSharedSecret(P, bobPrivateKey, alicePublicKey);
 //   return AES.decrypt(message, `${sharedKey}`).toString(enc.Utf8);
 // };
 
 // const cipheredMessage = cipherMessage("sometimes the same is different");
-// console.log("cipherMessage", cipheredMessage);
+// console.log({ cipheredMessage });
 // const decipheredMessage = decipherMessage(cipheredMessage);
-// console.log("decipheredMessage", decipheredMessage);
+// console.log({ decipheredMessage });
