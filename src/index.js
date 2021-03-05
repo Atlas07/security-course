@@ -1,4 +1,5 @@
-// https://github.com/nathanbuchar/node-cipher/blob/HEAD/docs/using-the-node-js-api.md#options files only
+const path = require('path')
+const fs = require('fs');
 const EventEmitter = require("events");
 const { AES, enc } = require("crypto-js");
 const nodecipher = require("node-cipher");
@@ -87,22 +88,24 @@ const recieveMessage = function (from, to, message) {
 };
 
 const sendFile = function (id, filename) {
-  const outputFilename = `${this.dir}${filename}.cast5`;
-  nodecipher.encryptSync({
-    input: filename,
-    output: outputFilename,
+  const fileWithFolder = `${this.dir}${filename}`;
+  const output = `${path.resolve(fileWithFolder)}.cast5`;
+
+  nodecipher.encryptSync({  
+    input: path.resolve(fileWithFolder),
+    output,
     password: this.symmetricPassword,
   });
 
   const hasClient = !!this.clients.find((client) => client === id);
 
   if (hasClient) {
-    events.emit(`${id}-recieveFile`, this.id, id, filename, outputFilename);
+    events.emit(`${id}-recieveFile`, this.id, id, filename, output);
     return;
   }
 
   this.clients.forEach((client) =>
-    events.emit(`${client}-recieveFile`, this.id, id, filename, outputFilename)
+    events.emit(`${client}-recieveFile`, this.id, id, filename, output)
   );
 };
 
@@ -111,15 +114,16 @@ const recieveFile = function (from, to, filename, filenamePath) {
   console.log({ from, to });
 
   if (to == this.id) {
-    const decipheredFile = nodecipher.decryptSync({
+    nodecipher.decryptSync({
       input: filenamePath,
-      output: `${this.dir}${filename}`,
+      output: path.resolve(`${this.dir}${filename}`),
       password: this.symmetricKeys[from],
     });
 
-    console.log({ decipheredFile });
     return;
   }
+
+  fs.copyFileSync(filenamePath, path.resolve(`${this.dir}${filename}.cast5`));
 
   const hasClient = !!this.clients.find((client) => client === to);
 
@@ -137,7 +141,7 @@ const clientA = {
   id: "VerticeA",
   publicKey: null,
   privateKey: null,
-  dir: "./files/clientA/",
+  dir: "files/clientA/",
   symmetricPassword: "clientBPass",
   sessionKeys: {},
   symmetricKeys: {},
@@ -157,7 +161,7 @@ const clientB = {
   id: "VerticeB",
   publicKey: null,
   privateKey: null,
-  dir: "./files/clientB/",
+  dir: "files/clientB/",
   sessionKeys: {},
   symmetricKeys: {},
   symmetricPassword: "clientBPass",
@@ -177,7 +181,7 @@ const clientC = {
   id: "VerticeC",
   publicKey: null,
   privateKey: null,
-  dir: "./files/clientC/",
+  dir: "files/clientC/",
   sessionKeys: {},
   symmetricKeys: {},
   symmetricPassword: "clientCPass",
@@ -242,5 +246,5 @@ clientC.sendMessage(clientB.id, {
   type: "password",
 });
 console.log('====================================');
-clientC.sendFile(clientB.id, "README.md");
+clientC.sendFile(clientB.id, 'README.md');
 
