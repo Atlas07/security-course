@@ -237,14 +237,18 @@ events.on(`${clientC.id}-recieveFile`, (from, to, filename, filenamePath) =>
   clientC.recieveFile(from, to, filename, filenamePath)
 );
 
-// clientC.sendMessage(clientB.id, {
-//   text: "Sometimes the same is different",
-//   type: "message",
-// });
+clientC.sendMessage(clientB.id, {
+  text: "Sometimes the same is different",
+  type: "message",
+});
 clientC.sendMessage(clientB.id, {
   text: clientC.symmetricPassword,
   type: "password",
 });
 console.log('====================================');
-clientC.sendFile(clientB.id, 'README.md');
+clientC.sendFile(clientB.id, 'lab1');
+console.log('====================================');
+console.log(clientA);
+console.log(clientB);
+console.log(clientC);
 
